@@ -5,6 +5,7 @@ namespace Step2dev\LazyMenu\Navigation\Menu;
 use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use LogicException;
 use Throwable;
@@ -89,7 +90,7 @@ class MenuManager extends Collection
         ?string $label = null,
         ?string $icon = null,
         ?array $children = null,
-        ?string $permission = null,
+        string|array|Closure|null $permission = null,
         ?string $iconView = null,
         ?array $parameters = null,
         mixed $badge = null,
@@ -169,9 +170,7 @@ class MenuManager extends Collection
                 continue;
             }
 
-            $permission = $item['permission'] ?? null;
-
-            if ($permission && ! auth()->user()?->can($permission)) {
+            if (! $this->permitted($item['permission'] ?? null)) {
                 continue;
             }
 
@@ -197,6 +196,25 @@ class MenuManager extends Collection
         }
 
         return $visible;
+    }
+
+    private function permitted(string|array|Closure|null $permission): bool
+    {
+        if ($permission === null) {
+            return true;
+        }
+
+        $user = auth()->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        if ($permission instanceof Closure) {
+            return (bool) $permission($user);
+        }
+
+        return Gate::forUser($user)->any((array) $permission);
     }
 
     /**

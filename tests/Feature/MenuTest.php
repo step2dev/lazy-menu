@@ -1,8 +1,10 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -300,4 +302,40 @@ it('uses Tailwind utility classes without requiring DaisyUI', function (): void 
 
     expect($html)->toContain('bg-slate-900', 'data-menu-group', 'rounded-full bg-cyan-500')
         ->not->toContain('bg-base-200', 'menu-title', 'class="badge"');
+});
+
+it('supports multiple abilities and custom access conditions without evaluating hidden badges', function (): void {
+    Gate::define('blog.view', fn (User $user): bool => true);
+    Gate::define('pages.view', fn (User $user): bool => false);
+
+    $badgeCalls = 0;
+    $makeMenu = function () use (&$badgeCalls): MenuManager {
+        $menu = new MenuManager(new Menu);
+        $menu->addItem('/public', 'Public');
+        $menu->addItem('/any', 'Any allowed', permission: ['blog.view', 'pages.view']);
+        $menu->addItem('/both', 'Both required', permission: fn (User $user): bool => $user->can('blog.view') && $user->can('pages.view'), badge: function () use (&$badgeCalls): int {
+            $badgeCalls++;
+
+            return 5;
+        });
+        $menu->addItem('/custom', 'Custom rule', permission: fn (User $user): bool => $user->getAuthIdentifier() === 7);
+        $menu->addItem('/parent', 'Parent', children: [
+            Menu::make('/child', 'Child')->permission(['pages.view', 'blog.view']),
+        ]);
+
+        return $menu;
+    };
+
+    expect(array_column($makeMenu()->visibleItems(), 'label'))->toBe(['Public', 'Parent'])
+        ->and($badgeCalls)->toBe(0);
+
+    $user = new User;
+    $user->id = 7;
+    $this->be($user);
+
+    $visible = $makeMenu()->visibleItems();
+
+    expect(array_column($visible, 'label'))->toBe(['Public', 'Any allowed', 'Custom rule', 'Parent'])
+        ->and($visible[3]['children'][0]['label'])->toBe('Child')
+        ->and($badgeCalls)->toBe(0);
 });
