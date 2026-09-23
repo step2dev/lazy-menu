@@ -2,6 +2,8 @@
 
 namespace Step2dev\LazyMenu\Navigation\Menu;
 
+use Closure;
+
 /** @phpstan-consistent-constructor */
 class Menu
 {
@@ -25,7 +27,7 @@ class Menu
         return $this;
     }
 
-    public function permission(string $permission): static
+    public function permission(string|array|Closure $permission): static
     {
         $this->items[count($this->items) - 1]['permission'] = $permission;
 

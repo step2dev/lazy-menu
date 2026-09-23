@@ -49,7 +49,25 @@ Menu::register(function (MenuManager $menu): void {
 }, id: 'pages', after: 'blog');
 ```
 
-The `group` and item label are optional. The `permission` argument hides an item when the current user cannot pass Laravel's `can()` check; a guest also cannot see it. Badge callbacks for hidden items are not evaluated. Without a label, the default Blade template translates the route name with `__($route)`, so define keys such as `admin.blog.index` and `admin.pages.index` in your translation files. Without a translation, Laravel displays the route key. The group label is translated the same way. Existing explicit labels and manual `$menu->push(['group' => 'Blog'])` calls remain supported.
+The `group` and item label are optional. `permission` accepts a single Laravel ability, an array of abilities (visible if **any** passes), or a callback receiving the authenticated user for custom logic. Items with a permission are hidden from guests; badge callbacks for hidden items are not evaluated.
+
+```php
+// Any of these permissions is enough:
+$menu->addItem('admin.blog.index', 'Articles', permission: ['blog.view', 'blog.manage']);
+
+// Require both permissions and an application-specific condition:
+$menu->addItem(
+    'admin.pages.index',
+    'Pages',
+    permission: fn ($user): bool => $user->can('pages.view')
+        && $user->can('pages.publish')
+        && $user->active,
+);
+
+// The same options work on nested items:
+$menu->createMenu('admin.blog.create', 'Create')
+    ->permission(fn ($user): bool => $user->can('blog.create') && $user->is_editor);
+``` Without a label, the default Blade template translates the route name with `__($route)`, so define keys such as `admin.blog.index` and `admin.pages.index` in your translation files. Without a translation, Laravel displays the route key. The group label is translated the same way. Existing explicit labels and manual `$menu->push(['group' => 'Blog'])` calls remain supported.
 
 Use `Menu::order('pages', before: 'blog')` in the host application's provider to change the order without editing installed modules. A lower priority appears first, and equal priorities preserve registration order. A missing anchor module is ignored: `Menu::order('pages', before: 'blog')` still shows Pages if Blog is absent. If Blog is registered later, the relative order applies automatically. Overrides for modules that never register are ignored. Cycles between installed modules throw a logic exception. Registration callbacks run once per request, when the menu renders. Cache database results inside callbacks where needed and filter by permissions with the `permission` argument.
 
