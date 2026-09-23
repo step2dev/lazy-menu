@@ -13,7 +13,7 @@ use Step2dev\LazyMenu\Navigation\Menu\MenuManager;
  * @method static string render(?string $view = null)
  * @method static MenuManager order(string $id, ?int $priority = null, ?string $before = null, ?string $after = null)
  * @method static MenuManager group(string $label)
- * @method static MenuManager addItem(string $route, ?string $label = null, ?string $icon = null, ?array $children = null, ?string $permission = null, ?string $iconView = null, ?array $parameters = null, mixed $badge = null)
+ * @method static MenuManager addItem(string $route, ?string $label = null, ?string $icon = null, ?array $children = null, string|array|Closure|null $permission = null, ?string $iconView = null, ?array $parameters = null, mixed $badge = null)
  */
 class Menu extends Facade
 {
