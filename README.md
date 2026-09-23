@@ -17,12 +17,12 @@ Until tagged releases are available, add a Composer VCS repository to the root a
         {"type": "vcs", "url": "https://github.com/step2dev/lazy-menu.git"}
     ],
     "require": {
-        "step2dev/lazy-menu": "dev-feature/extract-navigation"
+        "step2dev/lazy-menu": "dev-main"
     }
 }
 ```
 
-A private repository requires GitHub access for Composer on local machines and CI. Once the package changes are merged to `main`, switch the constraint to `dev-main`. Laravel automatically discovers the package service provider.
+Until a tagged release is available, use `dev-main`. Laravel automatically discovers the package service provider.
 
 ## Register navigation
 
@@ -31,15 +31,25 @@ use Step2dev\LazyMenu\Facades\Menu;
 use Step2dev\LazyMenu\Navigation\Menu\MenuManager;
 
 Menu::register(function (MenuManager $menu): void {
-    $menu->addItem('admin.blog.index', iconView: 'icons.articles');
+    $menu->addItem(
+        'admin.blog.index',
+        'Articles',
+        iconView: 'icons.articles',
+        permission: 'blog.view',
+    );
 }, id: 'blog', priority: 20, group: 'admin.menu.blog');
 
 Menu::register(function (MenuManager $menu): void {
-    $menu->addItem('admin.pages.index', badge: fn () => 5);
+    $menu->addItem(
+        'admin.pages.index',
+        'Pages',
+        permission: 'pages.view',
+        badge: fn () => 5,
+    );
 }, id: 'pages', after: 'blog');
 ```
 
-The `group` and item label are optional. Without a label, the default Blade template translates the route name with `__($route)`, so define keys such as `admin.blog.index` and `admin.pages.index` in your translation files. Without a translation, Laravel displays the route key. The group label is translated the same way. Existing explicit labels and manual `$menu->push(['group' => 'Blog'])` calls remain supported.
+The `group` and item label are optional. The `permission` argument hides an item when the current user cannot pass Laravel's `can()` check; a guest also cannot see it. Badge callbacks for hidden items are not evaluated. Without a label, the default Blade template translates the route name with `__($route)`, so define keys such as `admin.blog.index` and `admin.pages.index` in your translation files. Without a translation, Laravel displays the route key. The group label is translated the same way. Existing explicit labels and manual `$menu->push(['group' => 'Blog'])` calls remain supported.
 
 Use `Menu::order('pages', before: 'blog')` in the host application's provider to change the order without editing installed modules. A lower priority appears first, and equal priorities preserve registration order. A missing anchor module is ignored: `Menu::order('pages', before: 'blog')` still shows Pages if Blog is absent. If Blog is registered later, the relative order applies automatically. Overrides for modules that never register are ignored. Cycles between installed modules throw a logic exception. Registration callbacks run once per request, when the menu renders. Cache database results inside callbacks where needed and filter by permissions with the `permission` argument.
 
