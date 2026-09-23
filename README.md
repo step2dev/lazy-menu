@@ -1,103 +1,75 @@
-# :package_description
+# Lazy Menu
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-[![GitHub Tests Action Status](https://github.com/spatie/package-skeleton-laravel/actions/workflows/run-tests.yml/badge.svg)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://github.com/spatie/package-skeleton-laravel/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-<!--delete-->
----
-This repo can be used to scaffold a Laravel package. Follow these steps to get started:
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/step2dev/lazy-menu.svg?style=flat-square)](https://packagist.org/packages/step2dev/lazy-menu)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/step2dev/lazy-menu/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/step2dev/lazy-menu/actions/workflows/run-tests.yml?query=branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/step2dev/lazy-menu/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/step2dev/lazy-menu/actions/workflows/fix-php-code-style-issues.yml?query=branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/step2dev/lazy-menu.svg?style=flat-square)](https://packagist.org/packages/step2dev/lazy-menu)
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this skeleton.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
+Dynamic Laravel navigation for applications and independent modules. PHP 8.2+, Laravel 10–13.
 
-   To run it unattended — from a script, or by handing it to a coding agent — pass `--no-interaction`
-   (`-n`) and the answers as options. It never prompts, and exits non-zero with a message naming any
-   option it still needs:
+## Install from Git
 
-   ```bash
-   php ./configure.php -n --vendor-name="Spatie" --package-name="laravel-ray"
-   ```
+Until tagged releases are available, add a Composer VCS repository to the root application's `composer.json`:
 
-   Run "php ./configure.php --help" for the full list of options.
-3. Have fun creating your package.
-4. If you need help creating a package, consider picking up our <a href="https://laravelpackage.training">Laravel Package Training</a> video course.
----
-<!--/delete-->
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
-
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/:package_name.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/:package_name)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
-
-## Installation
-
-You can install the package via composer:
-
-```bash
-composer require :vendor_slug/:package_slug
+```json
+{
+    "repositories": [
+        {"type": "vcs", "url": "https://github.com/step2dev/lazy-menu.git"}
+    ],
+    "require": {
+        "step2dev/lazy-menu": "dev-feature/extract-navigation"
+    }
+}
 ```
 
-You can publish and run the migrations with:
+A private repository requires GitHub access for Composer on local machines and CI. Once the package changes are merged to `main`, switch the constraint to `dev-main`. Laravel automatically discovers the package service provider.
 
-```bash
-php artisan vendor:publish --tag=":package_slug-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag=":package_slug-config"
-```
-
-This is the contents of the published config file:
+## Register navigation
 
 ```php
-return [
-];
+use Step2dev\LazyMenu\Facades\Menu;
+use Step2dev\LazyMenu\Navigation\Menu\MenuManager;
+
+Menu::register(function (MenuManager $menu): void {
+    $menu->addItem('admin.blog.index', iconView: 'icons.articles');
+}, id: 'blog', priority: 20, group: 'admin.menu.blog');
+
+Menu::register(function (MenuManager $menu): void {
+    $menu->addItem('admin.pages.index', badge: fn () => 5);
+}, id: 'pages', after: 'blog');
 ```
 
-Optionally, you can publish the views using
+The `group` and item label are optional. Without a label, the default Blade template translates the route name with `__($route)`, so define keys such as `admin.blog.index` and `admin.pages.index` in your translation files. Without a translation, Laravel displays the route key. The group label is translated the same way. Existing explicit labels and manual `$menu->push(['group' => 'Blog'])` calls remain supported.
 
-```bash
-php artisan vendor:publish --tag=":package_slug-views"
-```
+Use `Menu::order('pages', before: 'blog')` in the host application's provider to change the order without editing installed modules. A lower priority appears first, and equal priorities preserve registration order. A missing anchor module is ignored: `Menu::order('pages', before: 'blog')` still shows Pages if Blog is absent. If Blog is registered later, the relative order applies automatically. Overrides for modules that never register are ignored. Cycles between installed modules throw a logic exception. Registration callbacks run once per request, when the menu renders. Cache database results inside callbacks where needed and filter by permissions with the `permission` argument.
 
-## Usage
+Legacy `buildUsing(...)`, `Menu::addItem(...)`, `Menu::createMenu(...)` and `Menu::render()` remain available. The package renders named routes with optional `parameters`, nested items, Blade SVG `iconView` icons, static or callback `badge` values and group labels. Do not pass arbitrary user-controlled view names to `iconView`.
+
+## Change the menu template
+
+For a custom layout, choose a Blade view in an application's service provider; no config file is needed:
 
 ```php
-$:variable = new VendorName\Skeleton();
-echo $:variable->echoPhrase('Hello, VendorName!');
+use Step2dev\LazyMenu\Facades\Menu;
+
+Menu::useView('admin.navigation.menu');
 ```
 
-## Testing
+The view receives `$menuItems`. To choose a view for one render, call `Menu::render('admin.navigation.compact')`; it takes precedence over `useView()`. The default is `lazy-menu::menu-generator`, styled with Tailwind utility classes and no DaisyUI dependency. When your Tailwind build does not scan vendor files, add `@source "../../vendor/step2dev/lazy-menu/resources/views/**/*.blade.php";` to `resources/css/app.css` for Tailwind v4 (adjust the relative path for your CSS entry point). For Tailwind v3, include `./vendor/step2dev/lazy-menu/resources/views/**/*.blade.php` in `content` in `tailwind.config.js`. Applications using lazy-admin render its separate DaisyUI template by default.
+
+To change the default menu, item or label markup, copy the corresponding package Blade file from `vendor/step2dev/lazy-menu/resources/views/` into the application's Laravel view override directory:
+
+```text
+resources/views/vendor/lazy-menu/menu-generator.blade.php
+resources/views/vendor/lazy-menu/menu-item.blade.php
+resources/views/vendor/lazy-menu/menu-label.blade.php
+```
+
+Override only the files you need. Laravel loads them instead of the package versions; item and label views receive `$item`. Keep labels and badge text escaped and leave permission filtering in the manager. Pass view names from trusted application code.
+
+## Tests
 
 ```bash
 composer test
+composer analyse
 ```
-
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
-## Credits
-
-- [:author_name](https://github.com/:author_username)
-- [All Contributors](../../contributors)
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
