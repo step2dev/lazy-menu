@@ -62,6 +62,13 @@ class Menu
         return $this;
     }
 
+    public function target(string $target): static
+    {
+        $this->items[count($this->items) - 1]['target'] = $target;
+
+        return $this;
+    }
+
     public function group(string $label): static
     {
         $this->items[] = ['group' => $label];
