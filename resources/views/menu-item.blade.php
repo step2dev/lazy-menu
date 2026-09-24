@@ -10,7 +10,10 @@
         @endphp
         @if($hasChildren && $target)
             <div class="flex items-center gap-1">
-                <a href="{{ $href }}" @class(['flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400', 'bg-slate-700 text-white' => $active])>
+                <a href="{{ $href }}"
+                   @if(! empty($item['target'])) target="{{ $item['target'] }}" @endif
+                   @if(($item['target'] ?? null) === '_blank') rel="noopener noreferrer" @endif
+                   @class(['flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400', 'bg-slate-700 text-white' => $active])>
                     @include('lazy-menu::menu-label', ['item' => $item])
                 </a>
                 <details class="relative" @if($active) open @endif>
@@ -32,7 +35,10 @@
                 </ul>
             </details>
         @else
-            <a href="{{ $href }}" @class(['flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400', 'bg-slate-700 text-white' => $active])>@include('lazy-menu::menu-label', ['item' => $item])</a>
+            <a href="{{ $href }}"
+                   @if(! empty($item['target'])) target="{{ $item['target'] }}" @endif
+                   @if(($item['target'] ?? null) === '_blank') rel="noopener noreferrer" @endif
+                   @class(['flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400', 'bg-slate-700 text-white' => $active])>@include('lazy-menu::menu-label', ['item' => $item])</a>
         @endif
     </li>
 @endif
