@@ -94,6 +94,7 @@ class MenuManager extends Collection
         ?string $iconView = null,
         ?array $parameters = null,
         mixed $badge = null,
+        ?string $target = null,
     ): static {
         $label ??= $route;
         $children ??= [];
@@ -113,6 +114,7 @@ class MenuManager extends Collection
             'icon_view' => $iconView,
             'parameters' => $parameters ?? [],
             'badge' => $badge,
+            'target' => $target,
         ]);
     }
 
